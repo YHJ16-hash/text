@@ -7,6 +7,10 @@ import re
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
+# 新增pyecharts词云相关导入
+from pyecharts import options as opts
+from pyecharts.charts import WordCloud
+from streamlit_echarts import st_pyecharts  # 用于在streamlit中展示pyecharts图表
 
 # 加载停用词
 def load_stopwords():
@@ -44,7 +48,19 @@ def word_segment_and_count(text, stopwords, min_freq):
     sorted_count = sorted(filtered_count.items(), key=lambda x: x[1], reverse=True)
     return filtered_count, sorted_count
 
-# 生成不同图表（matplotlib/seaborn，Streamlit原生支持）
+# 生成pyecharts词云
+def generate_wordcloud(word_data):
+    wordcloud = (
+        WordCloud()
+        .add("", word_data, word_size_range=[20, 100])
+        .set_global_opts(
+            title_opts=opts.TitleOpts(title="词云图"),
+            tooltip_opts=opts.TooltipOpts(is_show=True),
+        )
+    )
+    return wordcloud
+
+# 生成不同图表（matplotlib/seaborn）
 def plot_chart(chart_type, top20_words, top20_counts):
     # 解决中文显示问题
     plt.rcParams["font.sans-serif"] = ["SimHei"]  # 黑体
@@ -129,10 +145,10 @@ def main():
     # 加载停用词
     stopwords = load_stopwords()
 
-    # -------------- 侧边栏：筛选功能（至少7种图表）--------------
+    # -------------- 侧边栏：筛选功能（包含词云图，共8种图表）--------------
     st.sidebar.title("🔧 功能筛选")
-    # 图表类型筛选（7种+额外1种，满足要求）
-    chart_types = ["柱状图", "折线图", "饼图", "散点图", "热力图", "漏斗图", "雷达图", "横向柱状图"]
+    # 图表类型筛选（增加词云图，共8种）
+    chart_types = ["柱状图", "折线图", "饼图", "散点图", "热力图", "漏斗图", "雷达图", "词云图"]
     selected_chart = st.sidebar.selectbox("选择图表类型", chart_types)
     # 低频词过滤滑块
     min_freq = st.sidebar.slider("过滤低频词（最小词频）", min_value=1, max_value=20, value=2, step=1)
@@ -157,23 +173,22 @@ def main():
             top20_words = [item[0] for item in top20]
             top20_counts = [item[1] for item in top20]
 
-            # -------------- 展示词频前20（用纯Markdown，不依赖PyArrow）--------------
+            # -------------- 展示词频前20 --------------
             st.subheader("📊 词频排名前20的词汇")
-            # 手动构建Markdown表格（纯文本，无任何依赖）
+            # 手动构建Markdown表格
             md_table = "| 排名 | 词汇 | 词频 |\n|------|------|------|\n"
             for idx, (word, count) in enumerate(top20, 1):
                 md_table += f"| {idx} | {word} | {count} |\n"
-            st.markdown(md_table)  # 渲染Markdown表格，完全不触发PyArrow
+            st.markdown(md_table)
 
-            # -------------- 展示图表（处理额外的“横向柱状图”，复用柱状图逻辑）--------------
+            # -------------- 展示图表（包含词云图）--------------
             st.subheader(f"📈 {selected_chart}展示")
-            # 处理横向柱状图（其实就是普通柱状图的反转，这里单独列出来凑数）
-            if selected_chart == "横向柱状图":
-                plot_chart("柱状图", top20_words, top20_counts)
+            if selected_chart == "词云图":
+                # 使用pyecharts生成词云并展示
+                wordcloud = generate_wordcloud(sorted_count[:50])  # 取前50个词生成词云
+                st_pyecharts(wordcloud)
             else:
                 plot_chart(selected_chart, top20_words, top20_counts)
 
 if __name__ == "__main__":
     main()
-
-
