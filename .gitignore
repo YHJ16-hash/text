@@ -1,0 +1,14 @@
+# python项目通用忽略
+__pycache__/
+*.pyc
+venv/
+.env
+*.log
+.venv/
+# streamlit缓存
+.streamlit/
+# 打包产物
+dist/
+build/
+*.png
+*.jpg

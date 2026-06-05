@@ -1,0 +1,18 @@
+{
+  "build": {
+    "env": {
+      "PYTHON_VERSION": "3.11"
+    }
+  },
+  "functions": {
+    "app.py": {
+      "runtime": "@vercel/python@3.11"
+    }
+  },
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "app.py"
+    }
+  ]
+}
